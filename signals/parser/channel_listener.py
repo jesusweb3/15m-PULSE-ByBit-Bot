@@ -4,6 +4,7 @@ from pyrogram import Client
 from pyrogram.types import Message
 from signals.parser.message_filter import MessageFilter
 from signals.parser.signal_parser import SignalParser
+from trading.trade_engine import TradeEngine
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -16,6 +17,7 @@ class ChannelListener:
         self.polling_interval = polling_interval
         self.last_message_id: int = 0
         self.is_running: bool = False
+        self.trade_engine = TradeEngine()
 
     async def start(self) -> None:
         """Запуск прослушивания канала"""
@@ -74,8 +76,7 @@ class ChannelListener:
         except Exception as e:
             logger.error(f"Ошибка получения новых сообщений: {e}", exc_info=True)
 
-    @staticmethod
-    def _process_message(message: Message) -> None:
+    def _process_message(self, message: Message) -> None:
         """Обработка одного сообщения"""
         if not MessageFilter.is_signal_message(message):
             return
@@ -84,3 +85,4 @@ class ChannelListener:
 
         if signal:
             logger.info(f"Получен новый сигнал: {signal}")
+            self.trade_engine.execute_signal(signal)
